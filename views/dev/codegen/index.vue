@@ -19,7 +19,8 @@
     </el-card>
 
     <el-card shadow="never" style="margin-top: 8px">
-      <el-table :data="state.configs" highlight-current-row size="default" @row-click="configSelect" @row-dblclick="modifyConfig">
+      <el-table :data="state.configs" highlight-current-row size="default" @row-click="configSelect"
+        @row-dblclick="modifyConfig">
         <el-table-column type="expand" fixed>
           <template #default="scope">
             <el-row>
@@ -50,7 +51,8 @@
                   <el-dropdown-item @click="removeConfig(scope.row)">删除</el-dropdown-item>
                   <el-dropdown-item @click="generate(scope.row)">生成代码</el-dropdown-item>
                   <el-dropdown-item @click="genMenu(scope.row)">生成菜单数据</el-dropdown-item>
-                  <el-dropdown-item v-if="scope.row.generateType != 2" @click="compile(scope.row)">编译并同步结构</el-dropdown-item>
+                  <el-dropdown-item v-if="scope.row.generateType != 2"
+                    @click="compile(scope.row)">编译并同步结构</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -64,11 +66,8 @@
       <template #footer>
         <span style="margin: 8px">
           <el-button @click="state.dbStructShow = false">取消</el-button>
-          <el-button
-            @click="createConfigFromTable(state.filter.dbTree)"
-            type="primary"
-            :disabled="!state.filter.dbTree || (state.filter.dbTree != null && state.filter.dbTree.type != 'table')"
-          >
+          <el-button @click="createConfigFromTable(state.filter.dbTree)" type="primary"
+            :disabled="!state.filter.dbTree || (state.filter.dbTree != null && state.filter.dbTree.type != 'table')">
             按表结构创建生成配置
           </el-button>
         </span>
@@ -141,6 +140,7 @@ const genDefaultConfig = (): CodeGenUpdateInput => {
     generateType: '1',
     apiAreaName: state.defaultOption?.apiAreaName ?? 'admin',
     namespace: state.defaultOption?.namespace ?? 'SirHQ.CodeGen.Apps',
+    menuAfterText: state.defaultOption?.menuAfterText ?? '',
     busName: '',
     baseEntity: 'EntityBase',
     backendOut: state.defaultOption?.backendOut ?? '',
@@ -173,12 +173,12 @@ const getTables = async () => {
   let dbTree: DbTree[] = []
 
   res?.data?.forEach((config: CodeGenGetOutput) => {
-    let tree: DbTree = {
+    let tree: DbTree = Object.assign({
       key: config.tableName,
       label: config.tableName + ' ' + config.comment,
       type: 'table',
       children: [],
-    }
+    }, config)
 
     config.fields?.forEach((col: CodeGenFieldGetOutput) => {
       tree.children?.push({
