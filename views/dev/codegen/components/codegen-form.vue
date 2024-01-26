@@ -69,7 +69,12 @@
           </el-col>
           <el-col :xl="8" :lg="8" :md="12" :sm="12" :xs="24">
             <el-form-item label="父菜单" prop="menuPid">
-              <el-input v-model="state.config.menuPid" placeholder=""></el-input>
+              <el-input v-model="state.config.menuPid" placeholder="手动新建菜单及视图，不要用 业务名+管理"></el-input>
+            </el-form-item>
+          </el-col>
+          <el-col :xl="8" :lg="8" :md="12" :sm="12" :xs="24">
+            <el-form-item label="菜单后缀" prop="menuAfterText">
+              <el-input v-model="state.config.menuAfterText" placeholder="菜单后缀 xxx管理"></el-input>
             </el-form-item>
           </el-col>
           <!-- <el-col :xl="8" :lg="8" :md="12" :sm="12" :xs="24">
@@ -439,6 +444,7 @@ const editRules = reactive<FormRules>({
   backendOut: [{ required: true, message: '后端代码生成输出目录不能为空', trigger: 'blur' }],
   /** 前端输出目录 */
   frontendOut: [],
+  menuAfterText:[],
 })
 const state = reactive({
   showDialog: false,
