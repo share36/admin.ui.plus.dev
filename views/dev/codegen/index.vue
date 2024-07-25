@@ -1,8 +1,8 @@
 <template>
   <div style="padding: 0px 8px">
     <el-card shadow="never" :body-style="{ paddingBottom: '0' }" style="margin-top: 8px">
-      <el-form class="ad-form-query" inline :model="state.filter">
-        <el-form-item label="数据源">
+      <el-form class="ad-form-query" :inline="true" :model="state.filter" :disabled="state.dataLoading">
+        <el-form-item label="数据源" style="width:280px !important;">
           <el-select v-model="state.filter.dbKey" @change="getConfigs">
             <el-option v-for="item in state.dbKeys" :key="item.dbKey" :value="item.dbKey" :label="item.dbKey"></el-option>
           </el-select>
@@ -19,8 +19,7 @@
     </el-card>
 
     <el-card shadow="never" style="margin-top: 8px">
-      <el-table :data="state.configs" highlight-current-row size="default" @row-click="configSelect"
-        @row-dblclick="modifyConfig">
+      <el-table :data="state.configs" highlight-current-row size="default" @row-click="configSelect" @row-dblclick="modifyConfig" >
         <el-table-column type="expand" fixed>
           <template #default="scope">
             <el-row>
@@ -44,15 +43,14 @@
         <el-table-column prop="comment" label="备注" width></el-table-column>
         <el-table-column label="操作" width="105" fixed="right">
           <template #default="scope">
-            <el-dropdown split-button type="primary" size="small" @click="modifyConfig(scope.row)">
+            <el-dropdown split-button type="primary" size="small" @click="modifyConfig(scope.row)" :disabled="state.dataLoading">
               编辑
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item @click="removeConfig(scope.row)">删除</el-dropdown-item>
                   <el-dropdown-item @click="generate(scope.row)">生成代码</el-dropdown-item>
                   <el-dropdown-item @click="genMenu(scope.row)">生成菜单数据</el-dropdown-item>
-                  <el-dropdown-item v-if="scope.row.generateType != 2"
-                    @click="compile(scope.row)">编译并同步结构</el-dropdown-item>
+                  <el-dropdown-item v-if="scope.row.generateType != 2" @click="compile(scope.row)">编译并同步结构</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -66,8 +64,11 @@
       <template #footer>
         <span style="margin: 8px">
           <el-button @click="state.dbStructShow = false">取消</el-button>
-          <el-button @click="createConfigFromTable(state.filter.dbTree)" type="primary"
-            :disabled="!state.filter.dbTree || (state.filter.dbTree != null && state.filter.dbTree.type != 'table')">
+          <el-button
+            @click="createConfigFromTable(state.filter.dbTree)"
+            type="primary"
+            :disabled="!state.filter.dbTree || (state.filter.dbTree != null && state.filter.dbTree.type != 'table')"
+          >
             按表结构创建生成配置
           </el-button>
         </span>
@@ -140,7 +141,6 @@ const genDefaultConfig = (): CodeGenUpdateInput => {
     generateType: '1',
     apiAreaName: state.defaultOption?.apiAreaName ?? 'admin',
     namespace: state.defaultOption?.namespace ?? 'SirHQ.CodeGen.Apps',
-    menuAfterText: state.defaultOption?.menuAfterText ?? '',
     busName: '',
     baseEntity: 'EntityBase',
     backendOut: state.defaultOption?.backendOut ?? '',
@@ -167,18 +167,19 @@ const getBaseData = async () => {
 }
 const getTables = async () => {
   if (!state.filter.dbKey) return
+  state.dataLoading = true
   const res = await new CodeGenApi().getTables({ dbkey: state.filter.dbKey })
   state.dbStructShow = true
 
   let dbTree: DbTree[] = []
 
   res?.data?.forEach((config: CodeGenGetOutput) => {
-    let tree: DbTree = Object.assign({
+    let tree: DbTree = {
       key: config.tableName,
       label: config.tableName + ' ' + config.comment,
       type: 'table',
       children: [],
-    }, config)
+    }
 
     config.fields?.forEach((col: CodeGenFieldGetOutput) => {
       tree.children?.push({
@@ -191,6 +192,7 @@ const getTables = async () => {
     dbTree.push(tree)
   })
   state.dbTree = dbTree
+  state.dataLoading = false
 }
 const getConfigs = async () => {
   state.filter.config = null

@@ -69,7 +69,7 @@
           </el-col>
           <el-col :xl="8" :lg="8" :md="12" :sm="12" :xs="24">
             <el-form-item label="父菜单" prop="menuPid">
-              <el-input v-model="state.config.menuPid" placeholder="手动新建菜单及视图，不要用 业务名+管理"></el-input>
+              <el-input v-model="state.config.menuPid" title="不要用 业务名+管理，可使用 Name、Label、Path" placeholder="手动新建菜单权限及视图"></el-input>
             </el-form-item>
           </el-col>
           <el-col :xl="8" :lg="8" :md="12" :sm="12" :xs="24">
@@ -202,6 +202,11 @@
               ><!-- :disabled="editMode != 'add'"-->
               <el-input v-if="!showMode" v-model="scope.row.columnRawName"></el-input>
               <div v-else>{{ scope.row.columnRawName }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="encrypt" label="密传" width="50">
+            <template #default="scope">
+              <el-checkbox v-model="scope.row.encryptTrans" :disabled="showMode"></el-checkbox>
             </template>
           </el-table-column>
           <el-table-column prop="comment" label="备注" width="200">
@@ -368,7 +373,7 @@ const props = defineProps({
   },
   editors: {
     type: [] as PropType<Array<String>>,
-    default: ['el-input', 'el-select', 'el-date-picker', 'el-switch', 'el-upload'],
+    default: ['el-input', 'el-password', 'el-select', 'el-date-picker', 'el-datetime-picker', 'el-switch', 'el-upload'],
   },
   includes: {
     type: [] as PropType<Array<SelectOptionType>>,
@@ -423,7 +428,6 @@ Custom	18
     */
   }
 })
-
 //const { proxy } = getCurrentInstance() as any
 const editRules = reactive<FormRules>({
   /** 作者姓名 */
@@ -444,8 +448,10 @@ const editRules = reactive<FormRules>({
   backendOut: [{ required: true, message: '后端代码生成输出目录不能为空', trigger: 'blur' }],
   /** 前端输出目录 */
   frontendOut: [],
-  menuAfterText:[],
 })
+
+export interface newColFlag{ ___id:number}
+
 const state = reactive({
   showDialog: false,
   sureLoading: false,
@@ -459,9 +465,15 @@ const state = reactive({
 const setTableSize = (size:string) => {
   state.tableSize = size;
 }
+
+var _newColId:number = 0;
+
 function _newCol(name: string, title: string, netType: string, options: CodeGenUpdateInput | any | null): CodeGenFieldGetOutput {
   if (undefined == netType || null == netType) netType = 'string'
-  let col: CodeGenFieldGetOutput = {
+
+  _newColId++
+
+  var col: CodeGenFieldGetOutput & newColFlag = {
     id: 0,
     dbKey: '',
     columnName: name,
@@ -489,22 +501,29 @@ function _newCol(name: string, title: string, netType: string, options: CodeGenU
     includeEntity: '',
     includeMode: 0,
     includeEntityKey: '',
+    isUnique: false,
+    encryptTrans: false,
     frontendRuleTrigger: 'blur',
+    ___id:_newColId
   }
 
   if (options != null) {
-    for (let idx in options) {
-      col[idx] = options[idx]
-    }
+    // for (const key in options) {
+    //   if(col.hasOwnProperty(key))
+    //   {
+    //      col[key] = options[key]
+    //   }
+    // }
+    col = Object.assign(col, options)
   }
 
   return col
 }
-// // 打开对话框
+// 增加字段
 const appendField = async (fieldType: number) => {
   console.log('append in editor')
   if (!state.config) return
-  if (!state.config.fields) state.config.fields = [] as CodeGenFieldGetOutput[]
+  if (!state.config.fields) state.config.fields = [] as (CodeGenFieldGetOutput&newColFlag)[]
   var fields = state.config.fields
 
   if (fieldType == 1) {
@@ -562,11 +581,19 @@ const appendField = async (fieldType: number) => {
   }
 }
 
-const removeField = async (row: CodeGenFieldGetOutput) => {
+const removeField = async (row: CodeGenFieldGetOutput & newColFlag) => {
   if (!state.config?.fields) return
-  var cols = state.config.fields
+  let cols = state.config.fields
   state.config.fields = cols.filter((item:CodeGenFieldGetOutput) => {
-    return item.id != row.id && item.columnName != row.columnName
+    if('undefined' != typeof item.id && item.id !== null && item.id > 0)
+    {
+      return item.id != row.id && item.columnName != row.columnName
+    }else{
+      let item1 = item as newColFlag
+      if(item1 != null)
+        return item1.___id != row.___id
+      return true
+    }
   })
 }
 const onCancel = () => {
